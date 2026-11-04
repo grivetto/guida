@@ -1,11 +1,13 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { blogPosts } from "../data/mockData";
+import { blogPostsByLang } from "../data/mockData";
 import { ArrowLeft, Calendar, Tag } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function BlogPost() {
   const { id } = useParams();
-  const post = blogPosts.find((p) => p.id === id);
+  const { language, t, locale } = useLanguage();
+  const post = blogPostsByLang[language].find((p) => p.id === id);
 
   if (!post) {
     return (
@@ -13,12 +15,12 @@ export default function BlogPost() {
         <h1 className="text-6xl font-display uppercase text-[var(--color-neon-pink)] mb-4">
           404
         </h1>
-        <p className="text-xl text-gray-400 mb-8">Articolo non trovato.</p>
+        <p className="text-xl text-gray-400 mb-8">{t.blog.notFound}</p>
         <Link
           to="/blog"
           className="text-[var(--color-neon-yellow)] hover:underline flex items-center gap-2"
         >
-          <ArrowLeft size={20} /> Torna al Blog
+          <ArrowLeft size={20} /> {t.blog.backToBlog}
         </Link>
       </div>
     );
@@ -30,7 +32,7 @@ export default function BlogPost() {
         to="/blog"
         className="inline-flex items-center gap-2 text-gray-400 hover:text-[var(--color-neon-pink)] transition-colors mb-8 font-mono text-sm uppercase tracking-wider"
       >
-        <ArrowLeft size={16} /> Torna agli articoli
+        <ArrowLeft size={16} /> {t.blog.backToArticles}
       </Link>
 
       <motion.div
@@ -54,7 +56,7 @@ export default function BlogPost() {
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 text-gray-300 text-xs font-mono border border-white/10 backdrop-blur-md">
                 <Calendar size={12} />{" "}
-                {new Date(post.date).toLocaleDateString("it-IT", {
+                {new Date(post.date).toLocaleDateString(locale, {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -72,22 +74,40 @@ export default function BlogPost() {
             {/* Simple markdown rendering for demo purposes */}
             {post.content.split("\n").map((paragraph, idx) => {
               if (paragraph.startsWith("- ")) {
+                const parts = paragraph.substring(2).split(/(\*\*.*?\*\*)/g);
                 return (
                   <li key={idx} className="ml-4 list-disc text-gray-300">
-                    {paragraph.substring(2)}
+                    {parts.map((part, i) =>
+                      part.startsWith("**") && part.endsWith("**") ? (
+                        <strong key={i} className="text-white font-bold">
+                          {part.slice(2, -2)}
+                        </strong>
+                      ) : (
+                        part
+                      ),
+                    )}
                   </li>
                 );
               }
               if (paragraph.match(/^\d+\./)) {
+                const text = paragraph.substring(paragraph.indexOf(" ") + 1);
+                const parts = text.split(/(\*\*.*?\*\*)/g);
                 return (
                   <li key={idx} className="ml-4 list-decimal text-gray-300">
-                    {paragraph.substring(paragraph.indexOf(" ") + 1)}
+                    {parts.map((part, i) =>
+                      part.startsWith("**") && part.endsWith("**") ? (
+                        <strong key={i} className="text-white font-bold">
+                          {part.slice(2, -2)}
+                        </strong>
+                      ) : (
+                        part
+                      ),
+                    )}
                   </li>
                 );
               }
               if (paragraph.trim() === "") return <br key={idx} />;
 
-              // Handle bold text **text**
               const parts = paragraph.split(/(\*\*.*?\*\*)/g);
               return (
                 <p key={idx} className="text-gray-300 leading-relaxed mb-4">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { quizQuestions } from "../data/mockData";
+import { quizQuestionsByLang } from "../data/mockData";
 import {
   CheckCircle2,
   XCircle,
@@ -9,8 +9,12 @@ import {
   ArrowRight,
 } from "lucide-react";
 import clsx from "clsx";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Quiz() {
+  const { language, t } = useLanguage();
+  const questions = quizQuestionsByLang[language];
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
@@ -35,32 +39,21 @@ export default function Quiz() {
     if (selectedAnswer === null) return;
 
     setIsAnswerChecked(true);
-    if (selectedAnswer === quizQuestions[currentQuestionIndex].correctAnswer) {
+    if (selectedAnswer === questions[currentQuestionIndex].correctAnswer) {
       setScore(score + 1);
     }
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < quizQuestions.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setIsAnswerChecked(false);
     } else {
       setShowResults(true);
-      if (
-        score +
-          (selectedAnswer === quizQuestions[currentQuestionIndex].correctAnswer
-            ? 1
-            : 0) >
-        bestScore
-      ) {
-        const newBest =
-          score +
-          (selectedAnswer === quizQuestions[currentQuestionIndex].correctAnswer
-            ? 1
-            : 0);
-        setBestScore(newBest);
-        localStorage.setItem("quizBestScore", newBest.toString());
+      if (score > bestScore) {
+        setBestScore(score);
+        localStorage.setItem("quizBestScore", score.toString());
       }
     }
   };
@@ -73,8 +66,8 @@ export default function Quiz() {
     setShowResults(false);
   };
 
-  const question = quizQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
+  const question = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -84,11 +77,11 @@ export default function Quiz() {
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl md:text-7xl font-display uppercase tracking-tighter mb-4"
         >
-          Quiz <span className="text-[var(--color-neon-pink)]">Patente</span>
+          {t.quiz.title1}{" "}
+          <span className="text-[var(--color-neon-pink)]">{t.quiz.title2}</span>
         </motion.h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto font-mono">
-          Mettiti alla prova con le domande ufficiali. Migliora il tuo punteggio
-          e preparati per l'esame.
+          {t.quiz.subtitle}
         </p>
       </div>
 
@@ -105,9 +98,12 @@ export default function Quiz() {
             <div className="mb-8">
               <div className="flex justify-between text-sm font-mono text-gray-400 mb-2">
                 <span>
-                  Domanda {currentQuestionIndex + 1} di {quizQuestions.length}
+                  {t.quiz.questionOf} {currentQuestionIndex + 1} {t.quiz.of}{" "}
+                  {questions.length}
                 </span>
-                <span>Punteggio: {score}</span>
+                <span>
+                  {t.quiz.score}: {score}
+                </span>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <motion.div
@@ -128,7 +124,7 @@ export default function Quiz() {
                 <div className="rounded-2xl overflow-hidden mb-6 border border-white/10">
                   <img
                     src={question.image}
-                    alt="Immagine quiz"
+                    alt={t.quiz.quizImageAlt}
                     className="w-full h-auto object-cover max-h-64"
                     referrerPolicy="no-referrer"
                   />
@@ -213,7 +209,7 @@ export default function Quiz() {
                   className="mb-8 p-4 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm leading-relaxed"
                 >
                   <strong className="text-white block mb-1">
-                    Spiegazione:
+                    {t.quiz.explanation}
                   </strong>
                   {question.explanation}
                 </motion.div>
@@ -232,16 +228,16 @@ export default function Quiz() {
                       : "bg-white/10 text-gray-500 cursor-not-allowed",
                   )}
                 >
-                  Conferma Risposta
+                  {t.quiz.confirmAnswer}
                 </button>
               ) : (
                 <button
                   onClick={handleNextQuestion}
                   className="px-8 py-4 rounded-full font-bold uppercase tracking-wider bg-white text-black hover:scale-105 transition-all flex items-center gap-2"
                 >
-                  {currentQuestionIndex < quizQuestions.length - 1
-                    ? "Prossima Domanda"
-                    : "Vedi Risultati"}
+                  {currentQuestionIndex < questions.length - 1
+                    ? t.quiz.nextQuestion
+                    : t.quiz.seeResults}
                   <ArrowRight size={20} />
                 </button>
               )}
@@ -259,21 +255,21 @@ export default function Quiz() {
             </div>
 
             <h2 className="text-4xl font-display uppercase tracking-tight mb-2">
-              Quiz Completato!
+              {t.quiz.completedTitle}
             </h2>
 
             <p className="text-gray-400 font-mono mb-8">
-              Hai risposto correttamente a {score} domande su{" "}
-              {quizQuestions.length}.
+              {t.quiz.completedSummary1} {score} {t.quiz.completedSummary2}{" "}
+              {questions.length}.
             </p>
 
             <div className="flex justify-center gap-8 mb-10">
               <div className="text-center">
                 <div className="text-5xl font-bold text-[var(--color-neon-pink)] mb-1">
-                  {Math.round((score / quizQuestions.length) * 100)}%
+                  {Math.round((score / questions.length) * 100)}%
                 </div>
                 <div className="text-sm text-gray-500 uppercase tracking-wider font-mono">
-                  Precisione
+                  {t.quiz.accuracy}
                 </div>
               </div>
               <div className="w-px bg-white/10" />
@@ -282,7 +278,7 @@ export default function Quiz() {
                   {bestScore}
                 </div>
                 <div className="text-sm text-gray-500 uppercase tracking-wider font-mono">
-                  Record
+                  {t.quiz.record}
                 </div>
               </div>
             </div>
@@ -291,7 +287,7 @@ export default function Quiz() {
               onClick={handleRestart}
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold uppercase tracking-wider bg-[var(--color-neon-yellow)] text-black hover:scale-105 transition-all neon-shadow"
             >
-              <RotateCcw size={20} /> Riprova
+              <RotateCcw size={20} /> {t.quiz.retry}
             </button>
           </motion.div>
         )}

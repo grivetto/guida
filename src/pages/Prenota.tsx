@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { format, addDays, startOfToday, isSameDay, parseISO } from "date-fns";
-import { it } from "date-fns/locale";
 import { availableSlots } from "../data/mockData";
 import {
   Calendar as CalendarIcon,
@@ -13,8 +12,10 @@ import {
   BookOpen,
 } from "lucide-react";
 import clsx from "clsx";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Prenota() {
+  const { t, locale } = useLanguage();
   const today = startOfToday();
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -27,7 +28,6 @@ export default function Prenota() {
   const days = Array.from({ length: 14 }).map((_, i) => addDays(today, i));
 
   useEffect(() => {
-    // Load booked slots from local storage
     const stored = localStorage.getItem("bookedSlots");
     if (stored) {
       setBookedSlots(JSON.parse(stored));
@@ -37,14 +37,12 @@ export default function Prenota() {
   const handleBook = () => {
     if (!selectedSlot) return;
 
-    // Simulate API call
     setTimeout(() => {
       const newBookedSlots = [...bookedSlots, selectedSlot];
       setBookedSlots(newBookedSlots);
       localStorage.setItem("bookedSlots", JSON.stringify(newBookedSlots));
       setBookingStatus("success");
 
-      // Reset after 3 seconds
       setTimeout(() => {
         setBookingStatus("idle");
         setSelectedSlot(null);
@@ -64,12 +62,13 @@ export default function Prenota() {
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl md:text-7xl font-display uppercase tracking-tighter mb-4"
         >
-          Prenota{" "}
-          <span className="text-[var(--color-neon-yellow)]">Lezione</span>
+          {t.prenota.title1}{" "}
+          <span className="text-[var(--color-neon-yellow)]">
+            {t.prenota.title2}
+          </span>
         </motion.h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto font-mono">
-          Scegli il giorno, l'orario e l'istruttore. Facile, veloce, zero
-          sbattimenti.
+          {t.prenota.subtitle}
         </p>
       </div>
 
@@ -85,12 +84,12 @@ export default function Prenota() {
               <CalendarIcon size={20} />
             </div>
             <h2 className="text-2xl font-display uppercase tracking-wider">
-              Seleziona Data
+              {t.prenota.selectDate}
             </h2>
           </div>
 
           <div className="grid grid-cols-7 gap-2 mb-4 text-center">
-            {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((day) => (
+            {t.prenota.weekDays.map((day) => (
               <div
                 key={day}
                 className="text-xs font-mono text-gray-500 uppercase"
@@ -101,7 +100,7 @@ export default function Prenota() {
           </div>
 
           <div className="grid grid-cols-7 gap-2">
-            {days.map((day, dayIdx) => {
+            {days.map((day) => {
               const isSelected = isSameDay(day, selectedDate);
               const hasSlots = availableSlots.some(
                 (s) =>
@@ -144,10 +143,14 @@ export default function Prenota() {
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
             <h2 className="text-2xl font-display uppercase tracking-wider flex items-center gap-3">
               <Clock size={24} className="text-[var(--color-neon-green)]" />
-              Orari Disponibili
+              {t.prenota.availableTimes}
             </h2>
             <span className="text-sm font-mono text-[var(--color-neon-yellow)] bg-[var(--color-neon-yellow)]/10 px-3 py-1 rounded-full border border-[var(--color-neon-yellow)]/20">
-              {format(selectedDate, "EEEE d MMMM", { locale: it })}
+              {selectedDate.toLocaleDateString(locale, {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
             </span>
           </div>
 
@@ -155,12 +158,8 @@ export default function Prenota() {
             {slotsForSelectedDate.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 py-12">
                 <AlertCircle size={48} className="mb-4 opacity-50" />
-                <p className="font-mono">
-                  Nessuno slot disponibile per questa data.
-                </p>
-                <p className="text-sm mt-2">
-                  Prova a selezionare un altro giorno.
-                </p>
+                <p className="font-mono">{t.prenota.noSlots}</p>
+                <p className="text-sm mt-2">{t.prenota.tryAnotherDay}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -206,10 +205,13 @@ export default function Prenota() {
                                 className="text-[var(--color-neon-pink)]"
                               />
                             )}
-                            Lezione di {slot.type}
+                            {slot.type === "Pratica"
+                              ? t.prenota.lessonPractice
+                              : t.prenota.lessonTheory}
                           </p>
                           <p className="text-sm text-gray-400 flex items-center gap-1 font-mono mt-1">
-                            <User size={14} /> Istruttore: {slot.instructor}
+                            <User size={14} /> {t.prenota.instructor}:{" "}
+                            {slot.instructor}
                           </p>
                         </div>
                       </div>
@@ -217,15 +219,15 @@ export default function Prenota() {
                       <div className="hidden sm:block">
                         {isBooked ? (
                           <span className="text-xs font-bold uppercase tracking-wider text-gray-500 bg-white/10 px-3 py-1 rounded-full">
-                            Prenotato
+                            {t.prenota.booked}
                           </span>
                         ) : isSelected ? (
                           <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-neon-green)] bg-[var(--color-neon-green)]/20 px-3 py-1 rounded-full border border-[var(--color-neon-green)]/30">
-                            Selezionato
+                            {t.prenota.selected}
                           </span>
                         ) : (
                           <span className="text-xs font-bold uppercase tracking-wider text-gray-400 border border-white/20 px-3 py-1 rounded-full">
-                            Disponibile
+                            {t.prenota.available}
                           </span>
                         )}
                       </div>
@@ -245,7 +247,7 @@ export default function Prenota() {
                 className="flex items-center justify-center gap-3 p-4 bg-[var(--color-neon-green)]/20 border border-[var(--color-neon-green)] rounded-2xl text-[var(--color-neon-green)] font-bold uppercase tracking-wider"
               >
                 <CheckCircle2 size={24} />
-                Prenotazione Confermata!
+                {t.prenota.bookingConfirmed}
               </motion.div>
             ) : (
               <button
@@ -260,7 +262,9 @@ export default function Prenota() {
                     : "bg-white/10 text-gray-500 cursor-not-allowed",
                 )}
               >
-                {selectedSlot ? "Conferma Prenotazione" : "Seleziona un orario"}
+                {selectedSlot
+                  ? t.prenota.confirmBooking
+                  : t.prenota.selectTimePrompt}
               </button>
             )}
           </div>
