@@ -390,6 +390,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     try {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const urlLang = params.get("lang")?.toLowerCase() as Language;
+        if (urlLang && ["it", "en", "es", "th"].includes(urlLang)) return urlLang;
+      }
       const saved = localStorage.getItem(STORAGE_KEY) as Language | null;
       if (saved && ["it", "en", "es", "th"].includes(saved)) return saved;
     } catch {
